@@ -4,11 +4,15 @@
   "description": "JavaScript Ferret IR interpreter",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint '**/*.js'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "ohm-js": "^15.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.24.0"
   }
 }

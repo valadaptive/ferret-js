@@ -1,0 +1,182 @@
+[
+	{
+		"type": "Definition",
+		"outType": {
+			"type": "Type",
+			"value": "u32"
+		},
+		"identifier": "length",
+		"inTypes": [
+			{
+				"type": "Type",
+				"value": {
+					"type": "DerefType",
+					"value": {
+						"type": "Type",
+						"value": "u8"
+					}
+				}
+			}
+		],
+		"lines": [
+			"init",
+			{
+				"type": "Assignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": "p"
+				},
+				"expr": {
+					"type": "EqExpr",
+					"op1": {
+						"type": "DerefExpr",
+						"value": "%0"
+					},
+					"op2": {
+						"type": "literal",
+						"value": "\\NUL"
+					}
+				}
+			},
+			{
+				"type": "Branch",
+				"condition": "p",
+				"label1": "then",
+				"label2": "else"
+			},
+			"then",
+			{
+				"type": "Return",
+				"value": "0"
+			},
+			"else",
+			{
+				"type": "Assignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": "next"
+				},
+				"expr": {
+					"type": "AddExpr",
+					"op1": {
+						"type": "DerefExpr",
+						"value": "%0"
+					},
+					"op2": "1"
+				}
+			},
+			{
+				"type": "Assignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": {
+						"type": "derefLvalue",
+						"value": {
+							"type": "lvalue",
+							"value": "temp"
+						}
+					}
+				},
+				"expr": {
+					"type": "DerefExpr",
+					"value": {
+						"type": "CallExpr",
+						"identifier": "length",
+						"args": [
+							"next"
+						]
+					}
+				}
+			},
+			{
+				"type": "PtrAssignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": "temp"
+				},
+				"expr": {
+					"type": "AddExpr",
+					"op1": "length",
+					"op2": "1"
+				}
+			},
+			{
+				"type": "Return",
+				"value": {
+					"type": "DerefExpr",
+					"value": "temp"
+				}
+			}
+		]
+	},
+	{
+		"type": "Definition",
+		"outType": {
+			"type": "Type",
+			"value": "i0"
+		},
+		"identifier": "print",
+		"inTypes": [
+			{
+				"type": "Type",
+				"value": {
+					"type": "DerefType",
+					"value": {
+						"type": "Type",
+						"value": "u8"
+					}
+				}
+			}
+		],
+		"lines": [
+			{
+				"type": "Assignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": "n"
+				},
+				"expr": {
+					"type": "CallExpr",
+					"identifier": "length",
+					"args": [
+						"%0"
+					]
+				}
+			},
+			{
+				"type": "Write",
+				"data": "%0",
+				"length": "n"
+			}
+		]
+	},
+	{
+		"type": "Definition",
+		"outType": {
+			"type": "Type",
+			"value": "i1"
+		},
+		"identifier": "main",
+		"inTypes": [],
+		"lines": [
+			{
+				"type": "Assignment",
+				"lvalue": {
+					"type": "lvalue",
+					"value": "str"
+				},
+				"expr": {
+					"type": "literal",
+					"value": "Hello, world!\u0000"
+				}
+			},
+			{
+				"type": "CallExpr",
+				"identifier": "print",
+				"args": [
+					"str"
+				]
+			}
+		]
+	}
+]
