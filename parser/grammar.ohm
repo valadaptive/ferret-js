@@ -1,0 +1,39 @@
+Ferret {
+  //Test = FunctionLine
+  Program = (Definition "\n"*) +
+  comment = ("//" (~"\n" any)+)?
+  text = (letter | digit | "%") +
+  Type_deref = Type "*"
+  Type = Type_deref | text
+  Definition = "def" Type text Type* "{" FunctionLine* "}"
+  FunctionLine = (labelDef | Assignment | PtrAssignment | Return | Branch | Write | Expr) comment
+  //FunctionLine = (Assignment | labelDef) comment
+  labelDef = text ":"
+  labelRef = ":" text
+  
+  string = "\"" (~"\"" any)+ "\""
+  number = digit+
+  literal = "\\NUL" | string | number
+  
+  DerefRvalue = "*" Rvalue
+  Rvalue = text | DerefRvalue | literal
+  
+  DerefExpr = "*" Expr
+  Expr = DerefExpr | ExprInner
+  ExprInner = AddExpr | SubExpr | MulExpr | DivExpr | EqExpr | CallExpr | Rvalue
+  
+  AddExpr = "add" Rvalue Rvalue
+  SubExpr = "sub" Rvalue Rvalue
+  MulExpr = "mul" Rvalue Rvalue
+  DivExpr = "div" Rvalue Rvalue
+  EqExpr = "eq" Rvalue Rvalue
+  CallExpr = "call" text text+
+  
+  derefLvalue = "*" lvalue
+  lvalue = text | derefLvalue
+  Assignment = lvalue "=" Expr
+  PtrAssignment = lvalue "<-" Expr
+  Return = "ret" Rvalue
+  Branch = "br" Rvalue labelRef labelRef
+  Write = "write" "stdout" Rvalue Rvalue
+}
