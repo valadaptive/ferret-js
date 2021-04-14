@@ -6,16 +6,19 @@ const grammar = ohm.grammar(
         Program = (Definition "\\n"*) +
         comment = ("//" (~"\\n" any)+)?
         text = (letter | digit | "%") +
-        DerefType = Type "*"
-        Type = DerefType | text
+        PtrType = Type "*"
+        Type = PtrType | text
         Definition = "def" Type text Type* "{" "\\n" FunctionLine* "}"
-        FunctionLine = (labelDef | Assignment | PtrAssignment | Return | Branch | Write | Expr) "\\n"+
+        Statement = labelDef | Assignment | PtrAssignment | Return | Branch | Write | Expr
+        FunctionLine = Statement? "\\n"+
         labelDef = text ":"
         labelRef = ":" text
         
         // TODO: handle escaped quotes inside string
         string = "\\"" (~"\\"" any)+ "\\""
-        number = digit+
+        decimalNumber = digit+
+        hexNumber = "0x" (digit | "a".."f" | "A".."F")
+        number = decimalNumber | hexNumber
         literal = "\\\\NUL" | string | number
         
         derefRvalue = "*" rvalue
@@ -43,14 +46,6 @@ const grammar = ohm.grammar(
 
 const semantics = grammar.createSemantics();
 
-const objMapInPlace = (obj, fn) => {
-    for (const key in obj) {
-        if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-        obj[key] = fn(obj[key]);
-    }
-    return obj;
-};
-
 const twoOpExpr = function(_name, op1, op2) {
     return {
         type: this.ctorName,
@@ -61,7 +56,10 @@ const twoOpExpr = function(_name, op1, op2) {
 
 semantics.addOperation('toAST', {
     Program (defs, _) {
-        return defs.children.map(def => def.toAST());
+        return {
+            type: 'Program',
+            definitions: defs.children.map(def => def.toAST())
+        };
     },
 
     text (_) {
@@ -69,14 +67,19 @@ semantics.addOperation('toAST', {
     },
 
     string (_startQuote, value, _endQuote) {
-        // TODO: do we want this?
-        // TODO: handle escaped quotes inside string
-        return value.sourceString.replace(/\\NUL/g, '\0');
+        return {
+            type: 'string',
+            // TODO: handle escaped quotes inside string
+            value: value.sourceString.replace(/\\NUL/g, '\0')
+        };
     },
 
     number (value) {
         // TODO: decide whether to use BigInt
-        return value.sourceString;
+        return {
+            type: 'number',
+            value: value.sourceString
+        };
     },
 
     literal (value) {
@@ -94,11 +97,7 @@ semantics.addOperation('toAST', {
     },
 
     lvalue (child) {
-        return {
-            // TODO: unwrap this node?
-            type: 'lvalue',
-            value: child.toAST()
-        };
+        return child.toAST();
     },
 
     derefRvalue (_star, child) {
@@ -110,7 +109,10 @@ semantics.addOperation('toAST', {
     },
 
     rvalue (child) {
-        return child.toAST();
+        return {
+            type: 'rvalue',
+            value: child.toAST()
+        };
     },
 
     Type (child) {
@@ -120,23 +122,33 @@ semantics.addOperation('toAST', {
         };
     },
 
-    DerefType (child, _star) {
+    PtrType (child, _star) {
         return {
-            type: 'DerefType',
+            type: 'PtrType',
             value: child.toAST()
         };
     },
 
     Definition (_def, outType, identifier, inTypes, _lbrace, _nl, lines, _rbrace) {
-        return Object.assign({type: 'Definition'}, objMapInPlace({outType, identifier, inTypes, lines}, node => node.toAST()));
+        return {
+            type: 'Definition',
+            outType: outType.toAST(),
+            identifier: identifier.toAST(),
+            inTypes: inTypes.toAST(),
+            lines: lines.toAST().filter(line => line !== null)
+        };
     },
 
     FunctionLine (child, _newlines) {
-        return child.toAST();
+        if (child.children.length === 0) return null;
+        return child.children[0].toAST();
     },
 
     labelDef (text, _colon) {
-        return text.toAST();
+        return {
+            type: 'labelDef',
+            value: text.toAST()
+        };
     },
 
     labelRef (_colon, text) {
@@ -218,6 +230,9 @@ const parse = input => {
     const preprocessed = input.replace(/\/\/[^\n]+/g, '');
 
     const result = grammar.match(preprocessed);
+    if (!result.succeeded()) {
+        throw new Error(result.message);
+    }
     const ast = semantics(result).toAST();
     //console.log(ast);
     return ast;

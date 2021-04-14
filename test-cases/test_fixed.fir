@@ -6,9 +6,9 @@ init:
 then:
   ret 0
 else:
-  next = add *%0 1      //move pointer to next char
-  *temp = *call length next //length of rest
-  temp <- add length 1 //increment by one
+  next = add %0 1      //move pointer to next char
+  *temp = call length next //length of rest
+  temp <- add *temp 1 //increment by one
   ret *temp
 }
 
