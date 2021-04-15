@@ -56,6 +56,7 @@ class FunctionCompiler {
     }
 
     compileLiteral (value) {
+        if (value === '\\NUL') return '0';
         switch (value.type) {
         case 'number': return value.value;
         case 'string': return this.constants.store(value.value);
@@ -64,11 +65,12 @@ class FunctionCompiler {
 
     /**
      * Compile some type of expression.
-     * @param {DerefExpr | AddExpr | SubExpr | MulExpr | DivExpr | EqExpr | CallExpr | rvalue} value
+     * @param {Expr | rvalue} value
      * @param {Block} block
      * @returns {string} The register which contains the result of the expression.
      */
-    compileExpr (value, block) {
+    compileExpr (expr, block) {
+        const value = expr.type === 'rvalue' ? expr : expr.value;
         switch (value.type) {
         case 'DerefExpr': {
             const evaled = this.compileExpr(value.value, block);
@@ -108,10 +110,12 @@ class FunctionCompiler {
                 return value.value;
             }
             switch (value.value.type) {
-            case 'literal': return this.compileLiteral(value.value);
-            default: return this.compileExpr(value.value, block);
+            case 'literal': return this.compileLiteral(value.value.value);
+            default: return this.compileExpr(value.value.value, block);
             }
         }
+
+        default: throw new Error(`Cannot compile expression of type ${value.type}`);
         }
     }
 
@@ -187,7 +191,7 @@ class FunctionCompiler {
         case 'Write':
             this.compileWrite(line, block);
             break;
-        case 'CallExpr':
+        case 'Expr':
             this.compileExpr(line, block);
             break;
         default:

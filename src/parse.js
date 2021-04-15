@@ -5,7 +5,7 @@ const grammar = ohm.grammar(
         space := " " | "\\t"
         Program = (Definition "\\n"*) +
         comment = ("//" (~"\\n" any)+)?
-        text = (letter | digit | "%") +
+        text = ~digit (letter | digit | "%") +
         PtrType = Type "*"
         Type = PtrType | text
         Definition = "def" Type text Type* "{" "\\n" FunctionLine* "}"
@@ -203,7 +203,10 @@ semantics.addOperation('toAST', {
     },
 
     Expr (child) {
-        return child.toAST();
+        return {
+            type: 'Expr',
+            value: child.toAST()
+        };
     },
 
     AddExpr: twoOpExpr,
