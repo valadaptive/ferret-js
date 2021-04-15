@@ -205,6 +205,7 @@ class FunctionCompiler {
         const {definition} = this;
         const {lines} = definition;
         const blocks = [];
+        const visitedLabels = new Set();
     
         let currentBlock = new Block('init');
         let hasPrevBlock = false;
@@ -212,10 +213,15 @@ class FunctionCompiler {
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             if (line.type === 'labelDef') {
+                // TODO: actually handle block name collisions instead of whatever this is
+                const labelName = line.value === 'init' ? 'init1' : line.value;
+                if (visitedLabels.has(labelName)) {
+                    throw new Error(`Duplicate label '${labelName}'`);
+                }
+                visitedLabels.add(labelName);
                 if (!blockTerminated && hasPrevBlock) throw new Error(`Block "${currentBlock.label}" falls through`);
                 blocks.push(currentBlock);
-                // TODO: actually handle block name collisions instead of whatever this is
-                currentBlock = new Block(line.value === 'init' ? 'init1' : line.value);
+                currentBlock = new Block(labelName);
                 hasPrevBlock = true;
                 blockTerminated = false;
             } else {
