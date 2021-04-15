@@ -33,7 +33,7 @@ const grammar = ohm.grammar(
         MulExpr = "mul" rvalue rvalue
         DivExpr = "div" rvalue rvalue
         EqExpr = "eq" rvalue rvalue
-        CallExpr = "call" text rvalue+
+        CallExpr = "call" text rvalue*
         
         derefLvalue = "*" lvalue
         lvalue = text | derefLvalue

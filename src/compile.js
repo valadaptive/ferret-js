@@ -38,9 +38,10 @@ class Constants {
 }
 
 class FunctionCompiler {
-    constructor (definition, constants) {
+    constructor (definition, constants, defMap) {
         this.definition = definition;
         this.constants = constants;
+        this.defMap = defMap;
         this.locals = [];
 
         /**
@@ -101,6 +102,7 @@ class FunctionCompiler {
         case 'CallExpr': {
             const compiledArgs = value.args.map(arg => this.compileExpr(arg, block));
             const register = this.nextRegister();
+            if (!(value.identifier in this.defMap)) throw new Error(`Call to undefined function "${value.identifier}"`);
             block.instructions.push(['CALL', value.identifier, register, ...compiledArgs]);
             return register;
         }
@@ -264,7 +266,11 @@ const compileProgram = ast => {
         defMap[identifier] = definition;
     }
 
-    return definitions.map(def => (new FunctionCompiler(def, constants)).compileFunction());
+    const compiledFunctions = definitions.map(def => (new FunctionCompiler(def, constants, defMap)).compileFunction());
+    return {
+        functions: compiledFunctions,
+        entryPoint: definitions.find(func => func.identifier === 'main')
+    };
 };
 
 module.exports = compileProgram;
