@@ -30,10 +30,31 @@ class Block {
 class Constants {
     constructor () {
         this.data  = [];
+        this.symbols = [];
     }
 
     store (constant) {
-        return `@.${this.data.push(constant) - 1}`;
+        const symbol = `@.${this.data.push(constant) - 1}`;
+        this.symbols.push(symbol);
+        return symbol;
+    }
+
+    compile () {
+        const totalLength = this.data.reduce((len, str) => len + str.length, 0);
+        const memory = new Uint8Array(totalLength);
+        const offsets = {};
+        let ptr = 0;
+        for (let i = 0; i < this.data.length; i++) {
+            const string = this.data[i];
+            const symbol = this.symbols[i];
+            offsets[symbol] = ptr;
+            // TODO: is this UTF-8 or UTF-16?
+            for (let j = 0; j < string.length; j++) {
+                memory[ptr++] = string.charCodeAt(j);
+            }
+        }
+
+        return {memory, offsets};
     }
 }
 
@@ -269,7 +290,8 @@ const compileProgram = ast => {
     const compiledFunctions = definitions.map(def => (new FunctionCompiler(def, constants, defMap)).compileFunction());
     return {
         functions: compiledFunctions,
-        entryPoint: definitions.find(func => func.identifier === 'main')
+        entryPoint: compiledFunctions.find(func => func.identifier === 'main'),
+        constants: constants.compile()
     };
 };
 
