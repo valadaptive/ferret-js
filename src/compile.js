@@ -228,6 +228,12 @@ class FunctionCompiler {
             currentBlock.instructions.push(['RET', '0']);
         }
         blocks.push(currentBlock);
+
+        for (const block of blocks) {
+            for (const successor of block.successors) {
+                if (!blocks.some(block => block.label === successor)) throw new Error(`Label to nonexistent block "${successor}"`);
+            }
+        }
     
         return {
             identifier: definition.identifier,
