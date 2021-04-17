@@ -40,7 +40,9 @@ const grammar = ohm.grammar(
         Assignment = lvalue "=" Expr
         PtrAssignment = lvalue "<-" Expr
         Return = "ret" rvalue
-        Branch = "br" rvalue labelRef labelRef
+        ConditionalBranchArgs = rvalue labelRef labelRef
+        UnconditionalBranchArgs = labelRef
+        Branch = "br" (ConditionalBranchArgs | UnconditionalBranchArgs)
         Write = "write" "stdout" rvalue rvalue
     }`);
 
@@ -178,12 +180,26 @@ semantics.addOperation('toAST', {
         };
     },
 
-    Branch (_br, condition, label1, label2) {
+    UnconditionalBranchArgs (label) {
         return {
-            type: 'Branch',
+            type: 'UnconditionalBranchArgs',
+            label: label.toAST()
+        };
+    },
+
+    ConditionalBranchArgs (condition, label1, label2) {
+        return {
+            type: 'ConditionalBranchArgs',
             condition: condition.toAST(),
             label1: label1.toAST(),
             label2: label2.toAST()
+        };
+    },
+
+    Branch (_br, args) {
+        return {
+            type: 'Branch',
+            args: args.toAST()
         };
     },
 

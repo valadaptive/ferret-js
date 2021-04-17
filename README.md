@@ -7,4 +7,3 @@ ferret-js is a very work-in-progress interpreter for the Ferret programming lang
 - Interpreter
 - Optimizer
 - On-disk bytecode format
-- Branches with one label (unconditional)

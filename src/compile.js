@@ -11,6 +11,7 @@ LOAD ADDR DST - loads the given value from the address pointed to by the given r
 STORE ADDR VAL - stores the given value at the address pointed to by the given register
 
 BR COND label1 label2 - jumps to label1 if COND = 1, or label2 if COND = 0
+JMP label - unconditionally jumps to label
 RET VAL - returns the given value from the function
 
 CALL func DST ...ARG - calls the given function, storing the result in DST, passing in the given arguments
@@ -181,10 +182,26 @@ class FunctionCompiler {
         block.instructions.push(['RET', this.compileExpr(ret.value, block)]);
     }
 
-    compileBranch (branch, block) {
+    compileConditionalBranch (branch, block) {
         block.successors.push(branch.label1, branch.label2);
         const register = this.compileExpr(branch.condition, block);
         block.instructions.push(['BR', register, branch.label1, branch.label2]);
+    }
+
+    compileUnconditionalBranch (branch, block) {
+        block.successors.push(branch.label);
+        block.instructions.push(['JMP', branch.label]);
+    }
+
+    compileBranch (branch, block) {
+        switch (branch.args.type) {
+        case 'ConditionalBranchArgs':
+            this.compileConditionalBranch(branch.args, block);
+            break;
+        case 'UnconditionalBranchArgs':
+            this.compileUnconditionalBranch(branch.args, block);
+            break;
+        }
     }
 
     compileWrite (write, block) {
